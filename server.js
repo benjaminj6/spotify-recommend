@@ -28,11 +28,21 @@ app.get('/search/:name', function(req, res) {
 
     searchReq.on('end', function(item) {
         var artist = item.artists.items[0];
-        res.json(artist);
+        
+        getRelated = getFromApi('artists/' + artist.id + '/related-artists');
+        
+        getRelated.on('end', function(item) {
+          artist.related = item.artists;
+          res.json(artist);
+        });
+        
+        getRelated.on('error', function() {
+          res.sendStatus(404);
+        });
     });
 
-    searchReq.on('error', function(code) {
-        res.sendStatus(code);
+    searchReq.on('error', function() {
+        res.sendStatus(404);
     });
 });
 
