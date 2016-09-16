@@ -33,7 +33,10 @@ app.get('/search/:name', function(req, res) {
         
         getRelated.on('end', function(item) {
           artist.related = item.artists;
-          res.json(artist);
+          
+          onGetRelatedComplete(artist, function() {
+            res.json(artist);
+          });
         });
         
         getRelated.on('error', function() {
@@ -45,5 +48,30 @@ app.get('/search/:name', function(req, res) {
         res.sendStatus(404);
     });
 });
+
+function onGetRelatedComplete(artist, callback) {
+  var complete = 0;
+
+  var checkComplete = function() {
+    if (complete === artist.related.length) {
+      callback();
+    }
+  };
+
+  artist.related.forEach(function(artist) {
+    // console.log('Inside forEach');
+    console.log(artist.id);
+
+    var topTracks = getFromApi('artists/' + artist.id + '/top-tracks?country=US');
+    
+    topTracks.on('end', function(item) {
+      console.log('Inside top tracks end');
+      artist.topTracks = item;
+      complete += 1;
+      checkComplete();
+    });
+  });
+}
+
 
 app.listen(process.env.PORT || 8080);
